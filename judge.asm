@@ -1,57 +1,39 @@
+default rel
+section .data
+fmt_in   db "%ld %ld", 0
+fmt_out  db "%ld", 10, 0
+msg_zero db "division by zero", 10, 0
 section .bss
-buf     resb 32
-outbuf  resb 16
+a resq 1
+b resq 1
 section .text
 global main
+extern scanf
+extern printf
 main:
-    mov rax, 0
-    mov rdi, 0
-    mov rsi, buf
-    mov rdx, 32
-    syscall
-    xor rax, rax
-    xor r8, r8
-read_loop:
-    mov bl, [buf + r8]
-    cmp bl, '0'
-    jb parse_done
-    cmp bl, '9'
-    ja parse_done
-    imul rax, rax, 10
-    sub bl, '0'
-    movzx rbx, bl
-    add rax, rbx
-    inc r8
-    jmp read_loop
-parse_done:
-    and rax, 65535
-    cmp rax, 0
-    jne convert
-    mov byte [outbuf], '0'
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, outbuf
-    mov rdx, 1
-    syscall
+    sub rsp, 8
+    lea rdi, [fmt_in]
+    lea rsi, [a]
+    lea rdx, [b]
     xor eax, eax
+    call scanf
+    mov rbx, [b]
+    cmp rbx, 0
+    je div_zero
+    mov rax, [a]
+    cqo
+    idiv rbx
+    lea rdi, [fmt_out]
+    mov rsi, rax
+    xor eax, eax
+    call printf
+    xor eax, eax
+    add rsp, 8
     ret
-convert:
-    mov r9, outbuf + 15
-    xor rcx, rcx
-convert_loop:
-    xor rdx, rdx
-    mov rbx, 10
-    div rbx
-    add dl, '0'
-    dec r9
-    mov [r9], dl
-    inc rcx
-    test rax, rax
-    jnz convert_loop
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, r9
-    mov rdx, rcx
-    syscall
+div_zero:
+    lea rdi, [msg_zero]
     xor eax, eax
+    call printf
+    xor eax, eax
+    add rsp, 8
     ret
