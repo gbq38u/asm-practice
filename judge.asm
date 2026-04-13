@@ -1,37 +1,59 @@
-default rel
 section .data
-fmt_in  db "%llu %llu", 0
-fmt_out db "%s", 10, 0
-yes_str db "YES", 0
-no_str  db "NO", 0
+fmt_in  db "%d", 0
+fmt_out db "%d ", 0
+
 section .bss
-a resq 1
-b resq 1
+n   resd 1
+arr resd 10000
+
 section .text
 global main
 extern scanf
 extern printf
+
 main:
-    sub rsp, 8
-    lea rdi, [fmt_in]
-    lea rsi, [a]
-    lea rdx, [b]
-    xor eax, eax
+    push ebx
+    push esi
+
+    push n
+    push fmt_in
     call scanf
-    mov rax, [a]
-    add rax, [b]
-    jc overflow
-    lea rdi, [fmt_out]
-    lea rsi, [no_str]
-    xor eax, eax
+    add esp, 8
+
+    xor esi, esi
+
+read_loop:
+    mov eax, [n]
+    cmp esi, eax
+    jge start_print
+
+    lea eax, [arr + esi*4]
+    push eax
+    push fmt_in
+    call scanf
+    add esp, 8
+
+    inc esi
+    jmp read_loop
+
+start_print:
+    mov esi, [n]
+    dec esi
+
+print_loop:
+    cmp esi, -1
+    je finish
+
+    push dword [arr + esi*4]
+    push fmt_out
     call printf
-    jmp finish
-overflow:
-    lea rdi, [fmt_out]
-    lea rsi, [yes_str]
-    xor eax, eax
-    call printf
+    add esp, 8
+
+    dec esi
+    jmp print_loop
+
 finish:
+    pop esi
+    pop ebx
     xor eax, eax
-    add rsp, 8
     ret
